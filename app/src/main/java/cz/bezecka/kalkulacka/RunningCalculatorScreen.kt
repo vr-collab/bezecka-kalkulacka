@@ -22,7 +22,6 @@ import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,18 +41,16 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
-private enum class FieldType {
-    DISTANCE, PACE, TIME
-}
+private enum class FieldType { DISTANCE, PACE, TIME }
 
 @Composable
 fun RunningCalculatorScreen() {
     val accent = Color(0xFF19E3C6)
     val scope = rememberCoroutineScope()
 
-    var distance by remember { mutableStateOf<Double?>(1.5) }
-    var pace by remember { mutableStateOf<Double?>(3.9) }
-    var timeSeconds by remember { mutableStateOf<Int?>(351) }
+    var distance by remember { mutableStateOf(1.5) }
+    var pace by remember { mutableStateOf(3.9) }
+    var timeSeconds by remember { mutableStateOf(351) }
 
     var isCalculating by remember { mutableStateOf(false) }
     var recalcJob by remember { mutableStateOf<Job?>(null) }
@@ -88,14 +85,11 @@ fun RunningCalculatorScreen() {
     fun performCalculation(changedField: FieldType) {
         when (changedField) {
             FieldType.DISTANCE, FieldType.PACE -> {
-                if (distance != null && pace != null) {
-                    timeSeconds = (distance!! * pace!! * 60).roundToInt()
-                }
+                timeSeconds = (distance * pace * 60).roundToInt()
             }
-
             FieldType.TIME -> {
-                if (distance != null && distance!! > 0 && timeSeconds != null) {
-                    pace = (timeSeconds!!.toDouble() / 60.0 / distance!!).coerceIn(1.0, 20.0)
+                if (distance > 0) {
+                    pace = (timeSeconds.toDouble() / 60.0 / distance).coerceIn(1.0, 20.0)
                 }
             }
         }
@@ -114,53 +108,37 @@ fun RunningCalculatorScreen() {
     fun startEditing(field: FieldType) {
         editingField = field
         inputText = when (field) {
-            FieldType.DISTANCE -> distance?.let {
-                String.format(java.util.Locale.US, "%.1f", it)
-            } ?: ""
-
-            FieldType.PACE -> pace?.let {
-                val totalSeconds = (it * 60).roundToInt()
-                String.format(
-                    java.util.Locale.US,
-                    "%d:%02d",
-                    totalSeconds / 60,
-                    totalSeconds % 60
-                )
-            } ?: ""
-
-            FieldType.TIME -> timeSeconds?.let { formatTime(it) } ?: ""
+            FieldType.DISTANCE -> String.format(java.util.Locale.US, "%.1f", distance)
+            FieldType.PACE -> {
+                val totalSeconds = (pace * 60).roundToInt()
+                String.format(java.util.Locale.US, "%d:%02d", totalSeconds / 60, totalSeconds % 60)
+            }
+            FieldType.TIME -> formatTime(timeSeconds)
         }
     }
 
     fun parsePace(text: String): Double? {
         val clean = text.trim().replace(",", ".")
-
         if (!clean.contains(":")) {
             return clean.toDoubleOrNull()
         }
-
         val parts = clean.split(":")
         if (parts.size != 2) return null
-
         val minutes = parts[0].toIntOrNull() ?: return null
         val seconds = parts[1].toIntOrNull() ?: return null
-
         if (minutes < 0 || seconds !in 0..59) return null
         return minutes + (seconds / 60.0)
     }
 
     fun parseTime(text: String): Int? {
         val parts = text.trim().split(":")
-
         return when (parts.size) {
             1 -> parts[0].toIntOrNull()
-
             2 -> {
                 val minutes = parts[0].toIntOrNull() ?: return null
                 val seconds = parts[1].toIntOrNull() ?: return null
                 if (minutes < 0 || seconds !in 0..59) null else minutes * 60 + seconds
             }
-
             3 -> {
                 val hours = parts[0].toIntOrNull() ?: return null
                 val minutes = parts[1].toIntOrNull() ?: return null
@@ -171,14 +149,12 @@ fun RunningCalculatorScreen() {
                     hours * 3600 + minutes * 60 + seconds
                 }
             }
-
             else -> null
         }
     }
 
     fun saveInput() {
         val field = editingField ?: return
-
         when (field) {
             FieldType.DISTANCE -> {
                 inputText.replace(",", ".").toDoubleOrNull()?.let {
@@ -186,14 +162,12 @@ fun RunningCalculatorScreen() {
                     triggerRecalc(FieldType.DISTANCE)
                 }
             }
-
             FieldType.PACE -> {
                 parsePace(inputText)?.let {
                     pace = it.coerceIn(1.0, 20.0)
                     triggerRecalc(FieldType.PACE)
                 }
             }
-
             FieldType.TIME -> {
                 parseTime(inputText)?.let {
                     timeSeconds = it.coerceIn(1, 24 * 60 * 60)
@@ -201,7 +175,6 @@ fun RunningCalculatorScreen() {
                 }
             }
         }
-
         editingField = null
     }
 
@@ -230,11 +203,11 @@ fun RunningCalculatorScreen() {
                     accent = accent,
                     onValueClick = { startEditing(FieldType.DISTANCE) },
                     onUp = {
-                        distance = roundDistance((distance ?: 0.0) + 0.1)
+                        distance = roundDistance(distance + 0.1)
                         triggerRecalc(FieldType.DISTANCE)
                     },
                     onDown = {
-                        distance = roundDistance((distance ?: 0.2) - 0.1)
+                        distance = roundDistance(distance - 0.1)
                         triggerRecalc(FieldType.DISTANCE)
                     }
                 )
@@ -245,11 +218,11 @@ fun RunningCalculatorScreen() {
                     accent = accent,
                     onValueClick = { startEditing(FieldType.PACE) },
                     onUp = {
-                        pace = ((pace ?: 3.0) + 0.1).coerceIn(1.0, 20.0)
+                        pace = (pace + 0.1).coerceIn(1.0, 20.0)
                         triggerRecalc(FieldType.PACE)
                     },
                     onDown = {
-                        pace = ((pace ?: 1.1) - 0.1).coerceAtLeast(1.0)
+                        pace = (pace - 0.1).coerceAtLeast(1.0)
                         triggerRecalc(FieldType.PACE)
                     }
                 )
@@ -260,11 +233,11 @@ fun RunningCalculatorScreen() {
                     accent = accent,
                     onValueClick = { startEditing(FieldType.TIME) },
                     onUp = {
-                        timeSeconds = ((timeSeconds ?: 0) + 1).coerceAtMost(24 * 60 * 60)
+                        timeSeconds = (timeSeconds + 1).coerceAtMost(24 * 60 * 60)
                         triggerRecalc(FieldType.TIME)
                     },
                     onDown = {
-                        timeSeconds = ((timeSeconds ?: 2) - 1).coerceAtLeast(1)
+                        timeSeconds = (timeSeconds - 1).coerceAtLeast(1)
                         triggerRecalc(FieldType.TIME)
                     }
                 )
@@ -284,9 +257,9 @@ fun RunningCalculatorScreen() {
                     onClick = {
                         recalcJob?.cancel()
                         isCalculating = false
-                        distance = null
-                        pace = null
-                        timeSeconds = null
+                        distance = 0.0
+                        pace = 1.0
+                        timeSeconds = 0
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = accent),
                     modifier = Modifier
@@ -304,108 +277,4 @@ fun RunningCalculatorScreen() {
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center
-                )
-            }
-        }
-    }
-
-    if (editingField != null) {
-        val title = when (editingField) {
-            FieldType.DISTANCE -> "Zadat vzdálenost v km"
-            FieldType.PACE -> "Zadat tempo (např. 4:35)"
-            FieldType.TIME -> "Zadat čas (např. 1:45:30)"
-            null -> ""
-        }
-
-        AlertDialog(
-            onDismissRequest = { editingField = null },
-            title = { Text(title) },
-            text = {
-                OutlinedTextField(
-                    value = inputText,
-                    onValueChange = { inputText = it },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-                    label = { Text("Hodnota") }
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = { saveInput() }) {
-                    Text("Uložit")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { editingField = null },
-                    colors = TextButtonDefaults.textButtonColors(contentColor = Color.Gray)
-                ) {
-                    Text("Zrušit")
-                }
-            }
-        )
-    }
-}
-
-@Composable
-private fun CalcCard(
-    title: String,
-    value: String,
-    accent: Color,
-    onValueClick: () -> Unit,
-    onUp: () -> Unit,
-    onDown: () -> Unit
-) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF111111)),
-        shape = RoundedCornerShape(20.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(120.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(20.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(
-                    text = title,
-                    color = Color.White,
-                    fontSize = 18.sp
-                )
-
-                TextButton(
-                    onClick = onValueClick,
-                    contentPadding = PaddingValues(0.dp)
-                ) {
-                    Text(
-                        text = value,
-                        color = accent,
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                SmallFloatingActionButton(
-                    onClick = onUp,
-                    containerColor = accent,
-                    contentColor = Color.Black
-                ) {
-                    Text("▲")
-                }
-
-                SmallFloatingActionButton(
-                    onClick = onDown,
-                    containerColor = accent,
-                    contentColor = Color.Black
-                ) {
-                    Text("▼")
-                }
-            }
-        }
-    }
-}
+                
