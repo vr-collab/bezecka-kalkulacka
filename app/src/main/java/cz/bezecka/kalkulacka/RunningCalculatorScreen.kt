@@ -30,6 +30,7 @@ fun RunningCalculatorScreen() {
     var recalcJob by remember { mutableStateOf<Job?>(null) }
 
     fun formatDistance(v: Double?) = v?.let { String.format(java.util.Locale.US, "%.1f km", it) } ?: "—"
+
     fun formatPace(v: Double?): String {
         if (v == null) return "—"
         val totalSec = (v * 60.0).roundToInt()
@@ -37,6 +38,7 @@ fun RunningCalculatorScreen() {
         val s = totalSec % 60
         return String.format(java.util.Locale.US, "%d:%02d min/km", m, s)
     }
+
     fun formatTime(sec: Int?): String {
         if (sec == null) return "—"
         val h = sec / 3600
@@ -103,7 +105,6 @@ fun RunningCalculatorScreen() {
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)
                 )
-
                 CalcCard(
                     title = "Vzdálenost",
                     value = formatDistance(distance),
@@ -118,7 +119,6 @@ fun RunningCalculatorScreen() {
                         triggerRecalc(FieldType.DISTANCE)
                     }
                 )
-
                 CalcCard(
                     title = "Tempo",
                     value = formatPace(pace),
@@ -133,7 +133,6 @@ fun RunningCalculatorScreen() {
                         triggerRecalc(FieldType.PACE)
                     }
                 )
-
                 CalcCard(
                     title = "Čas",
                     value = formatTime(timeSeconds),
@@ -147,7 +146,6 @@ fun RunningCalculatorScreen() {
                         triggerRecalc(FieldType.TIME)
                     }
                 )
-
                 if (computing) {
                     Text(
                         text = "🏃 Počítám...",
@@ -156,9 +154,7 @@ fun RunningCalculatorScreen() {
                         modifier = Modifier.align(Alignment.CenterHorizontally)
                     )
                 }
-
                 Spacer(modifier = Modifier.weight(1f))
-
                 Button(
                     onClick = {
                         recalcJob?.cancel()
@@ -174,6 +170,16 @@ fun RunningCalculatorScreen() {
                 ) {
                     Text("Vymazat", color = Color.Black, fontWeight = FontWeight.Bold)
                 }
+                Text(
+                    text = "Rumburští Draci",
+                    color = accent,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
             }
         }
     }
