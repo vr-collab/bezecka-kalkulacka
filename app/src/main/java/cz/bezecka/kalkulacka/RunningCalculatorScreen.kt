@@ -62,20 +62,18 @@ fun RunningCalculatorScreen() {
         return ((value.coerceIn(0.1, 200.0) * 10).roundToInt() / 10.0)
     }
 
-    fun formatDistance(value: Double?): String {
-        return value?.let { String.format(java.util.Locale.US, "%.1f km", it) } ?: "—"
+    fun formatDistance(value: Double): String {
+        return String.format(java.util.Locale.US, "%.1f km", value)
     }
 
-    fun formatPace(value: Double?): String {
-        if (value == null) return "—"
+    fun formatPace(value: Double): String {
         val totalSeconds = (value * 60).roundToInt()
         val minutes = totalSeconds / 60
         val seconds = totalSeconds % 60
         return String.format(java.util.Locale.US, "%d:%02d min/km", minutes, seconds)
     }
 
-    fun formatTime(seconds: Int?): String {
-        if (seconds == null) return "—"
+    fun formatTime(seconds: Int): String {
         val hours = seconds / 3600
         val minutes = (seconds % 3600) / 60
         val secs = seconds % 60
@@ -257,9 +255,9 @@ fun RunningCalculatorScreen() {
                     onClick = {
                         recalcJob?.cancel()
                         isCalculating = false
-                        distance = 0.0
-                        pace = 1.0
-                        timeSeconds = 0
+                        distance = 1.0
+                        pace = 5.0
+                        timeSeconds = 300
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = accent),
                     modifier = Modifier
@@ -277,4 +275,12 @@ fun RunningCalculatorScreen() {
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center
-                
+                )
+            }
+        }
+
+        if (editingField != null) {
+            val title = when (editingField) {
+                FieldType.DISTANCE -> "Zadat vzdálenost v km"
+                FieldType.PACE -> "Zadat tempo (např. 4:35)"
+                FieldType.TIME -> "Zadat čas (např.
